@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account information and profile details.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique user ID matching request.auth.uid.",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address.",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the attending user/clinician.",
+          "maxLength": 128
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar photo URL.",
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of user creation.",
+          "maxLength": 64
+        }
+      },
+      "required": ["id", "email"]
+    },
+    "TriageRecord": {
+      "title": "TriageRecord",
+      "description": "Persistent record of triaged patients and clinical outcomes.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Document ID for the triage entry.",
+          "maxLength": 128
+        },
+        "patientName": {
+          "type": "string",
+          "description": "Name or pseudonym of the triaged patient.",
+          "maxLength": 128
+        },
+        "age": {
+          "type": "number",
+          "description": "Age of the patient."
+        },
+        "department": {
+          "type": "string",
+          "description": "Department assigned (ER or OR).",
+          "maxLength": 16
+        },
+        "chiefComplaint": {
+          "type": "string",
+          "description": "Chief medical complaint.",
+          "maxLength": 256
+        },
+        "urgencyScore": {
+          "type": "number",
+          "description": "Min-Heap priority key."
+        },
+        "esiLevel": {
+          "type": "number",
+          "description": "Emergency Severity Index tier (1 to 5)."
+        },
+        "heartRate": {
+          "type": "number",
+          "description": "Heart rate in bpm."
+        },
+        "systolicBp": {
+          "type": "number",
+          "description": "Systolic BP in mmHg."
+        },
+        "diastolicBp": {
+          "type": "number",
+          "description": "Diastolic BP in mmHg."
+        },
+        "oxygenSat": {
+          "type": "number",
+          "description": "Oxygen saturation %."
+        },
+        "treatmentOutcome": {
+          "type": "string",
+          "description": "Final triage outcome or clinical status.",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID.",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp.",
+          "maxLength": 64
+        }
+      },
+      "required": ["id", "patientName", "department", "urgencyScore", "esiLevel", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles."
+    },
+    "/triage_records/{recordId}": {
+      "schema": "TriageRecord",
+      "description": "Collection of persisted patient triage records."
+    }
+  }
+}

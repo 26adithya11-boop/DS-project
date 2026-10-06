@@ -1,0 +1,7 @@
+{
+  "name": "ER Triage Heap Simulator",
+  "description": "Interactive hospital and emergency room triage simulator powered by a C priority queue min-heap engine, real-time vitals monitoring, and animated heap data structures.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

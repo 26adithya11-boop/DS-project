@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User Profile Validation Helper
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['id', 'email'])
+        && data.keys().hasOnly(['id', 'email', 'displayName', 'photoURL', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // Triage Record Validation Helper
+    function isValidTriageRecord(data) {
+      return data.keys().hasAll(['id', 'patientName', 'department', 'urgencyScore', 'esiLevel', 'userId'])
+        && data.keys().hasOnly([
+          'id', 'patientName', 'age', 'department', 'chiefComplaint',
+          'urgencyScore', 'esiLevel', 'heartRate', 'systolicBp',
+          'diastolicBp', 'oxygenSat', 'treatmentOutcome', 'userId', 'createdAt'
+        ])
+        && data.id is string && data.id.size() <= 128
+        && data.patientName is string && data.patientName.size() <= 128
+        && (!('age' in data) || (data.age is number && data.age >= 0 && data.age <= 130))
+        && data.department is string && data.department.size() <= 16
+        && (!('chiefComplaint' in data) || (data.chiefComplaint is string && data.chiefComplaint.size() <= 256))
+        && data.urgencyScore is number && data.urgencyScore >= 1.0 && data.urgencyScore <= 5.0
+        && data.esiLevel is number && data.esiLevel >= 1 && data.esiLevel <= 5
+        && (!('heartRate' in data) || (data.heartRate is number))
+        && (!('systolicBp' in data) || (data.systolicBp is number))
+        && (!('diastolicBp' in data) || (data.diastolicBp is number))
+        && (!('oxygenSat' in data) || (data.oxygenSat is number))
+        && (!('treatmentOutcome' in data) || (data.treatmentOutcome is string && data.treatmentOutcome.size() <= 64))
+        && data.userId is string && data.userId.size() <= 128
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // User profiles collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUserProfile(incoming()) && incoming().id == request.auth.uid;
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUserProfile(incoming())
+        && incoming().id == existing().id
+        && incoming().email == existing().email
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL']);
+      allow delete: if false;
+    }
+
+    // Triage Records collection
+    match /triage_records/{recordId} {
+      allow get: if isSignedIn() && isValidId(recordId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(recordId) && isValidTriageRecord(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(recordId) && isValidTriageRecord(incoming())
+        && resource.data.userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().id == existing().id;
+      allow delete: if isSignedIn() && isValidId(recordId) && resource.data.userId == request.auth.uid;
+    }
+  }
+}
